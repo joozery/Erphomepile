@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import {
   FaPlus,
   FaTrash,
@@ -24,10 +25,25 @@ const initialRow = {
   total: "",
 };
 
+const API_BASE = "https://serverhome-api-652e8f25df0c.herokuapp.com/api/orders";
+
 const AddOrder = () => {
   const [orders, setOrders] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ ...initialRow });
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const fetchOrders = async () => {
+    try {
+      const res = await axios.get(API_BASE);
+      setOrders(res.data);
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+    }
+  };
 
   const calculateFields = (data) => {
     const qty = parseFloat(data.quantity) || 0;
@@ -55,10 +71,35 @@ const AddOrder = () => {
     setForm(calculateFields(updatedForm));
   };
 
-  const handleAddOrder = () => {
-    setOrders([...orders, form]);
-    setShowModal(false);
-    setForm({ ...initialRow });
+  const handleAddOrder = async () => {
+    try {
+      const sanitizedForm = {
+        ...form,
+        transportCost: form.transportCost || 0,
+        pricePerUnit: form.pricePerUnit || 0,
+        quantity: form.quantity || 0,
+      };
+      const res = await axios.post(API_BASE, sanitizedForm);
+      setOrders([sanitizedForm, ...orders]);
+      setShowModal(false);
+      setForm({ ...initialRow });
+    } catch (err) {
+      console.error("Error adding order:", err);
+      alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+    }
+  };
+
+  const formatThaiDate = (dateStr) => {
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString("th-TH", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+    } catch {
+      return dateStr;
+    }
   };
 
   const removeOrder = (index) => {
@@ -114,7 +155,7 @@ const AddOrder = () => {
                 orders.map((order, index) => (
                   <tr key={index} className="hover:bg-gray-50">
                     <td className="border p-1 text-center">{index + 1}</td>
-                    <td className="border p-1">{order.date}</td>
+                    <td className="border p-1">{formatThaiDate(order.date)}</td>
                     <td className="border p-1">{order.subOrder}</td>
                     <td className="border p-1">{order.customer}</td>
                     <td className="border p-1">{order.company}</td>

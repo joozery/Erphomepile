@@ -1,41 +1,54 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { FaEdit, FaSave } from "react-icons/fa";
 
-const initialData = [
-  {
-    id: 1,
-    date: "2025-05-01",
-    subOrder: 1,
-    customer: "คุณสมบูรณ์ พหลวงาม",
-    company: "NOVAT",
-    docNo: "DNT6801004",
-    pileType: "I22-RB5",
-    unitPrice: 380,
-    quantity: 55,
-    pileTotal: 20900,
-    transport: 2000,
-    total: 22900,
-    taxType: "NO VAT",
-    beforeVat: 22900,
-    vat: 0,
-    grandTotal: 22900,
-    paymentDate: "2025-05-10",
-    deposit: 10000,
-    paid: 12900,
-    bank: "KBank",
-    debt: 0,
-    followUpDate: "2025-05-15"
-  }
-];
+const API_BASE = "https://serverhome-api-652e8f25df0c.herokuapp.com/api/orders";
 
 const UpdateOrder = () => {
-  const [orders, setOrders] = useState(initialData);
+  const [orders, setOrders] = useState([]);
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const fetchOrders = async () => {
+    try {
+      const res = await axios.get(API_BASE);
+      const transformed = res.data.map((order) => {
+        const qty = parseFloat(order.quantity) || 0;
+        const price = parseFloat(order.pricePerUnit) || 0;
+        const transport = parseFloat(order.transportCost) || 0;
+        const pileTotal = qty * price;
+        const beforeVat = pileTotal + transport;
+        const vat = order.taxType === "แยก VAT" ? beforeVat * 0.07 : 0;
+        const grandTotal = beforeVat + vat;
+        return {
+          ...order,
+          unitPrice: price,
+          pileTotal,
+          transport,
+          total: grandTotal,
+          beforeVat,
+          vat,
+          grandTotal,
+          deposit: 0,
+          paid: 0,
+          bank: "",
+          paymentDate: "",
+          followUpDate: "",
+          debt: grandTotal,
+        };
+      });
+      setOrders(transformed);
+    } catch (err) {
+      console.error("Error loading orders", err);
+    }
+  };
 
   const handleChange = (index, field, value) => {
     const newOrders = [...orders];
     newOrders[index][field] = value;
 
-    // คำนวณใหม่
     const qty = parseFloat(newOrders[index].quantity) || 0;
     const price = parseFloat(newOrders[index].unitPrice) || 0;
     const transport = parseFloat(newOrders[index].transport) || 0;
@@ -53,7 +66,7 @@ const UpdateOrder = () => {
       beforeVat,
       vat,
       grandTotal,
-      debt
+      debt,
     };
 
     setOrders(newOrders);
@@ -100,76 +113,18 @@ const UpdateOrder = () => {
               {orders.map((order, idx) => (
                 <tr key={order.id} className="hover:bg-gray-50">
                   <td className="border p-2 text-center">{idx + 1}</td>
-                  <td className="border p-1">
-                    <input
-                      type="date"
-                      className="w-full border rounded px-2 py-1"
-                      value={order.date}
-                      onChange={(e) => handleChange(idx, "date", e.target.value)}
-                    />
-                  </td>
-                  <td className="border p-1">
-                    <input
-                      type="number"
-                      className="w-full border rounded px-2 py-1"
-                      value={order.subOrder}
-                      onChange={(e) => handleChange(idx, "subOrder", e.target.value)}
-                    />
-                  </td>
-                  <td className="border p-1">
-                    <input
-                      type="text"
-                      className="w-full border rounded px-2 py-1"
-                      value={order.customer}
-                      onChange={(e) => handleChange(idx, "customer", e.target.value)}
-                    />
-                  </td>
-                  <td className="border p-1">
-                    <input
-                      type="text"
-                      className="w-full border rounded px-2 py-1"
-                      value={order.company}
-                      onChange={(e) => handleChange(idx, "company", e.target.value)}
-                    />
-                  </td>
-                  <td className="border p-1">{order.docNo}</td>
+                  <td className="border p-1">{new Date(order.date).toLocaleDateString("th-TH")}</td>
+                  <td className="border p-1">{order.subOrder}</td>
+                  <td className="border p-1">{order.customer}</td>
+                  <td className="border p-1">{order.company}</td>
+                  <td className="border p-1">{order.documentNo}</td>
                   <td className="border p-1">{order.pileType}</td>
-                  <td className="border p-1">
-                    <input
-                      type="number"
-                      className="w-full border rounded px-2 py-1"
-                      value={order.unitPrice}
-                      onChange={(e) => handleChange(idx, "unitPrice", e.target.value)}
-                    />
-                  </td>
-                  <td className="border p-1">
-                    <input
-                      type="number"
-                      className="w-full border rounded px-2 py-1"
-                      value={order.quantity}
-                      onChange={(e) => handleChange(idx, "quantity", e.target.value)}
-                    />
-                  </td>
+                  <td className="border p-1 text-right">{order.pricePerUnit}</td>
+                  <td className="border p-1 text-right">{order.quantity}</td>
                   <td className="border p-1 text-right">{order.pileTotal.toLocaleString()}</td>
-                  <td className="border p-1">
-                    <input
-                      type="number"
-                      className="w-full border rounded px-2 py-1"
-                      value={order.transport}
-                      onChange={(e) => handleChange(idx, "transport", e.target.value)}
-                    />
-                  </td>
+                  <td className="border p-1 text-right">{order.transport}</td>
                   <td className="border p-1 text-right">{order.total.toLocaleString()}</td>
-                  <td className="border p-1">
-                    <select
-                      value={order.taxType}
-                      className="w-full border rounded px-2 py-1"
-                      onChange={(e) => handleChange(idx, "taxType", e.target.value)}
-                    >
-                      <option value="NO VAT">NO VAT</option>
-                      <option value="แยก VAT">แยก VAT</option>
-                    </select>
-                  </td>
+                  <td className="border p-1">{order.taxType}</td>
                   <td className="border p-1 text-right">{order.beforeVat.toLocaleString()}</td>
                   <td className="border p-1 text-right">{order.vat.toLocaleString()}</td>
                   <td className="border p-1 text-right">{order.grandTotal.toLocaleString()}</td>

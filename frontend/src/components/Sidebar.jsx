@@ -44,7 +44,7 @@ const Sidebar = () => {
     {
       title: "จัดการระบบ",
       items: [
-        { label: "จัดการผู้ใช้งาน", icon: <FaUsersCog className="text-pink-500" />, path: "/dashboard/users" },
+        { label: "จัดการผู้ใช้งาน", icon: <FaUsersCog className="text-pink-500" />, path: "/dashboard/manage-users" },
         {
           label: "ฝ่ายขายและบัญชี",
           icon: <FaFileInvoiceDollar className="text-red-500" />,
@@ -58,7 +58,7 @@ const Sidebar = () => {
     {
       title: "ACCOUNT",
       items: [
-        { label: "โปรไฟล์", icon: <FaUserCircle className="text-gray-600" />, path: "/profile" },
+        { label: "โปรไฟล์", icon: <FaUserCircle className="text-gray-600" />, path: "/dashboard/profile" },
       ],
     },
   ];
